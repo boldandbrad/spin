@@ -101,18 +101,20 @@ albums. Both commands can be used in either TUI or CLI mode.
 
 #### TUI mode
 
-TUI mode is launched when no arguments are provided:
+TUI mode interactively prompts for scrobble deetails and is launched when no
+arguments are provided:
 
 ```sh
 spin track      # interactively search for and scrobble a track
 spin album      # interactively search for and scrobble an album
 ```
 
-This mode interactively prompts for artist and release details.
-
 TUI mode example:
 
 [TODO: add tui mode gif]
+
+Available TUI mode options:
+- `--dryrun`: show what would be scrobbled without submitting
 
 #### CLI mode
 

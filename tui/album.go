@@ -14,11 +14,17 @@ import (
 func AlbumTUI(profileFlag string, dryrun bool) error {
 	artist := ""
 	album := ""
+	dateInput := ""
+	timeInput := ""
 
 	inputForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().Title("Artist").Value(&artist).Placeholder("e.g., Radiohead"),
 			huh.NewInput().Title("Album").Value(&album).Placeholder("e.g., OK Computer"),
+		),
+		huh.NewGroup(
+			huh.NewInput().Title("Date (YYYY-MM-DD)").Value(&dateInput).Placeholder("optional"),
+			huh.NewInput().Title("Time (HH:MM)").Value(&timeInput).Placeholder("optional"),
 		),
 	)
 
@@ -28,6 +34,22 @@ func AlbumTUI(profileFlag string, dryrun bool) error {
 
 	if artist == "" || album == "" {
 		return nil
+	}
+
+	timestamp := time.Now()
+	if dateInput != "" || timeInput != "" {
+		if timeInput != "" {
+			t, err := scrobble.ParseTimeOfDay(timeInput)
+			if err == nil {
+				timestamp = t
+			}
+		}
+		if dateInput != "" {
+			t, err := scrobble.ParseDateTime(dateInput, timestamp.Format("15:04"))
+			if err == nil {
+				timestamp = t
+			}
+		}
 	}
 
 	client := api.NewClient()
@@ -41,7 +63,6 @@ func AlbumTUI(profileFlag string, dryrun bool) error {
 		return nil
 	}
 
-	timestamp := time.Now()
 	ts := scrobble.FormatTimestamp(timestamp)
 	tsFormatted := timestamp.Format("2006-01-02 15:04")
 

@@ -37,9 +37,20 @@ type AuthResponse struct {
 type TrackSearchResult struct {
 	Results struct {
 		TrackMatches struct {
-			Track []TrackInfo `json:"track"`
+			Track []TrackSearchInfo `json:"track"`
 		} `json:"trackmatches"`
 	} `json:"results"`
+}
+
+type TrackSearchInfo struct {
+	Name   string `json:"name"`
+	Artist string `json:"artist"`
+	URL    string `json:"url"`
+	Image  []struct {
+		Text string `json:"#text"`
+		Size string `json:"size"`
+	} `json:"image"`
+	Mbid string `json:"mbid"`
 }
 
 type AlbumSearchResult struct {
@@ -209,7 +220,7 @@ func (c *Client) GetSessionKey(username, password string) (string, error) {
 	return authResp.Session.Key, nil
 }
 
-func (c *Client) SearchTrack(artist, track string) ([]TrackInfo, error) {
+func (c *Client) SearchTrack(artist, track string) ([]TrackSearchInfo, error) {
 	params := url.Values{
 		"method":  {"track.search"},
 		"api_key": {c.GetAPIKey()},
