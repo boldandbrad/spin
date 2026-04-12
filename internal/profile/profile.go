@@ -1,0 +1,194 @@
+package profile
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"github.com/boldandbrad/spin/internal/config"
+	"github.com/boldandbrad/spin/internal/keyring"
+)
+
+type Profile struct {
+	Username   string `json:"username"`
+	HasSession bool   `json:"has_session"`
+}
+
+type ProfileStore struct {
+	Profiles []Profile `json:"profiles"`
+}
+
+func LoadProfiles() (*ProfileStore, error) {
+	dataFile := config.ProfileDataFile()
+
+	data, err := os.ReadFile(dataFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &ProfileStore{}, nil
+		}
+		return nil, fmt.Errorf("failed to read profiles: %w", err)
+	}
+
+	var store ProfileStore
+	if err := json.Unmarshal(data, &store); err != nil {
+		return nil, fmt.Errorf("failed to parse profiles: %w", err)
+	}
+
+	return &store, nil
+}
+
+func SaveProfiles(store *ProfileStore) error {
+	dataFile := config.ProfileDataFile()
+
+	data, err := json.MarshalIndent(store, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal profiles: %w", err)
+	}
+
+	if err := os.WriteFile(dataFile, data, 0600); err != nil {
+		return fmt.Errorf("failed to write profiles: %w", err)
+	}
+
+	return nil
+}
+
+func AddProfile(username string, sessionKey string) error {
+	store, err := LoadProfiles()
+	if err != nil {
+		return err
+	}
+
+	for _, p := range store.Profiles {
+		if p.Username == username {
+			return fmt.Errorf("profile %s already exists", username)
+		}
+	}
+
+	if err := keyring.SetCredential(username, sessionKey); err != nil {
+		return fmt.Errorf("failed to store credential: %w", err)
+	}
+
+	store.Profiles = append(store.Profiles, Profile{
+		Username:   username,
+		HasSession: sessionKey != "",
+	})
+
+	if err := SaveProfiles(store); err != nil {
+		return err
+	}
+
+	if len(store.Profiles) == 1 {
+		if err := SetActiveProfile(username); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func ListProfiles() ([]Profile, error) {
+	store, err := LoadProfiles()
+	if err != nil {
+		return nil, err
+	}
+	return store.Profiles, nil
+}
+
+func GetActiveProfile() (string, error) {
+	dataFile := config.ActiveProfileFile()
+
+	data, err := os.ReadFile(dataFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			profiles, err := ListProfiles()
+			if err != nil {
+				return "", err
+			}
+			if len(profiles) == 0 {
+				return "", fmt.Errorf("no active profile and no profiles found")
+			}
+			return profiles[0].Username, nil
+		}
+		return "", fmt.Errorf("failed to read active profile: %w", err)
+	}
+
+	return string(data), nil
+}
+
+func SetActiveProfile(username string) error {
+	store, err := LoadProfiles()
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for _, p := range store.Profiles {
+		if p.Username == username {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("profile %s not found", username)
+	}
+
+	dataFile := config.ActiveProfileFile()
+	if err := os.WriteFile(dataFile, []byte(username), 0600); err != nil {
+		return fmt.Errorf("failed to write active profile: %w", err)
+	}
+
+	return nil
+}
+
+func DeleteProfile(username string) error {
+	store, err := LoadProfiles()
+	if err != nil {
+		return err
+	}
+
+	found := -1
+	for i, p := range store.Profiles {
+		if p.Username == username {
+			found = i
+			break
+		}
+	}
+
+	if found == -1 {
+		return fmt.Errorf("profile %s not found", username)
+	}
+
+	store.Profiles = append(store.Profiles[:found], store.Profiles[found+1:]...)
+
+	if err := keyring.DeleteCredential(username); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to delete credential from keyring: %v\n", err)
+	}
+
+	if err := SaveProfiles(store); err != nil {
+		return err
+	}
+
+	active, err := GetActiveProfile()
+	if err == nil && active == username {
+		if len(store.Profiles) > 0 {
+			return SetActiveProfile(store.Profiles[0].Username)
+		}
+		os.Remove(config.ActiveProfileFile())
+	}
+
+	return nil
+}
+
+func ProfileExists(username string) bool {
+	profiles, err := ListProfiles()
+	if err != nil {
+		return false
+	}
+	for _, p := range profiles {
+		if p.Username == username {
+			return true
+		}
+	}
+	return false
+}

@@ -28,18 +28,18 @@ be created to enable scrobbling to different last.fm accounts. If there is only
 one profile, Spin will default to it, otherwise the active profile can be
 manually set.
 
-User session data is stored at [TODO: finalize data storage location].
+Session keys are stored securely in the system keychain (macOS Keychain or
+Linux Secret Service). Profile metadata is stored at `~/.config/spin/`.
 
 ### Scrobble Modes
 
-- 👤 **TUI mode**: A human friendly mode that interactively prompts for track or
-album details, searches last.fm for matches, and allows the user to select the
-correct release to scrobble. TUI mode closes automatically when a scrobble is
-submitted, or can be closed with `Ctrl+C`.
+- 👤 **TUI mode**: An interactive mode that prompts for artist and release details,
+  searches last.fm for the best match, and scrobbles automatically. TUI mode closes
+  automatically when a scrobble is submitted, or can be closed with `Ctrl+C`.
 
 - 🤖 **CLI mode**: An automation friendly mode that scrobbles tracks and albums
-directly using details provided as command arguments. Scrobbles are submitted as
-soon as the command is run.
+  directly using details provided as command arguments. Scrobbles are submitted as
+  soon as the command is run.
 
 By default, Spin uses the current time for scrobbles. However, both modes
 provide ways to set custom timestamps.
@@ -66,8 +66,9 @@ spin album
 ### Global flags
 
 ```sh
-spin -v/--version       # print version
-spin -h/--help          # print help message
+spin --version       # print version
+spin --help          # print help message
+spin --debug         # enable debug logging
 ```
 
 ### Profiles
@@ -107,9 +108,7 @@ spin track      # interactively search for and scrobble a track
 spin album      # interactively search for and scrobble an album
 ```
 
-This mode interactively prompts for details about the release (track or album)
-to be scrobbled, including the artist, release name, and optionally, the date
-and time of the listen, and the profile to scrobble with.
+This mode interactively prompts for artist and release details.
 
 TUI mode example:
 
@@ -126,15 +125,17 @@ spin album <artist> <album>                                 # scrobble album
 ```
 
 Available CLI mode options:
-- `-d|--date`: date of listen (default: current day)
-- `-t|--timestamp`: time of listen (default: current time)
+- `-d|--date`: date of listen (YYYY-MM-DD)
+- `-t|--timestamp`: time of listen (HH:MM)
 - `-p|--profile`: profile to scrobble with (default: active profile)
+- `--dryrun`: show what would be scrobbled without submitting
 
 CLI mode examples:
 
 ```sh
 spin track "Best Frenz" "Replay"                            # scrobble track now
 spin track "Joywave" "Nice House" -t 12:46 -p boldandbrad   # specific time today and profile
+spin track "Joywave" "Nice House" --dryrun                  # preview without scrobbling
 spin album "Coldplay" "X&Y" -t 15:32                        # specific time today
 spin album "Electric Guest" "Mondo" -d 2026-01-31 -t 01:14  # specific date and time
 ```
@@ -146,7 +147,7 @@ were successful without launching last.fm in the browser.
 
 ```sh
 spin history                # list active profile's recent scrobbles
-spin history -n/--limit 50  # set the number of results
+spin history -n 50          # set the number of results
 ```
 
 ## Why use spin?
@@ -155,6 +156,7 @@ spin history -n/--limit 50  # set the number of results
 - 🎮 Interactive: fun and easy to use on the fly
 - 👥 Multi-user: profiles enable scrobbling to multiple accounts
 - 🔧 No config: just works out of the box
+- 🔒 Secure: session keys stored in system keychain
 
 ## License
 
