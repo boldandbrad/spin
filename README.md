@@ -8,8 +8,7 @@ terminal. That's it.
 ## Install
 
 ```sh
-brew tap boldandbrad/tap
-brew install spin
+brew install boldandbrad/tap/spin
 ```
 
 Or download a release and add it to your path.
@@ -96,7 +95,8 @@ spin profile delete <lastfm-username>   # remove a profile
 
 ### Scrobble
 
-Tracks and albums are scrobbled with their own dedicated commands.
+Spin provides dedicated commands for scrobbling individual tracks and full
+albums. Both commands can be used in either TUI or CLI mode.
 
 #### TUI mode
 
@@ -107,13 +107,18 @@ spin track      # interactively search for and scrobble a track
 spin album      # interactively search for and scrobble an album
 ```
 
+This mode interactively prompts for details about the release (track or album)
+to be scrobbled, including the artist, release name, and optionally, the date
+and time of the listen, and the profile to scrobble with.
+
+TUI mode example:
+
 [TODO: add tui mode gif]
 
 #### CLI mode
 
-CLI mode is enabled when arguments are present. In this mode both the track and
-album commands require two positional arguments: the `artist`, and then `track`
-or `album` respectively.
+CLI mode is enabled when arguments are present. Both commands require two
+positional arguments: `artist`, and then `track` or `album` respectively.
 
 ```sh
 spin track <artist> <track>                                 # scrobble track
@@ -135,6 +140,9 @@ spin album "Electric Guest" "Mondo" -d 2026-01-31 -t 01:14  # specific date and 
 ```
 
 ### History
+
+Review recent scrobbles from the active profile. Useful for validating scrobbles
+were successful without launching last.fm in the browser.
 
 ```sh
 spin history                # list active profile's recent scrobbles
