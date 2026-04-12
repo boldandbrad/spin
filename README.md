@@ -11,13 +11,17 @@ terminal. That's it.
 brew install boldandbrad/tap/spin
 ```
 
-Or download a release and add it to your path.
-
-> Coming soon.
+Or download a [release](https://github.com/boldandbrad/spin/releases) and add
+the `spin` binary to your path.
 
 Or build from source.
 
-> Coming soon.
+```sh
+git clone https://github.com/boldandbrad/spin.git
+cd spin
+go build -o spin .
+./spin --version  # verify installation
+```
 
 ## How it works
 
