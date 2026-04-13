@@ -2,8 +2,8 @@ package tui
 
 import (
 	"fmt"
-	"os"
 
+	"charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
 	"github.com/boldandbrad/spin/internal/scrobble"
 )
@@ -71,9 +71,8 @@ func CollectInput(isAlbum bool) (*ScrobbleInput, error) {
 				).
 				Value(&timeMode),
 		),
-	)
+	).WithProgramOptions(tea.WithoutCatchPanics())
 
-	os.Setenv("TEA_LOG", "")
 	if err := form.Run(); err != nil {
 		return nil, err
 	}
@@ -91,7 +90,7 @@ func CollectInput(isAlbum bool) (*ScrobbleInput, error) {
 					return nil
 				}),
 			),
-		)
+		).WithProgramOptions(tea.WithoutCatchPanics())
 		if err := timeForm.Run(); err != nil {
 			return nil, err
 		}
