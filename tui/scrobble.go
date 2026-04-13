@@ -1,8 +1,8 @@
 package tui
 
 import (
+	"charm.land/huh/v2"
 	"github.com/boldandbrad/spin/internal/scrobble"
-	"github.com/charmbracelet/huh"
 )
 
 type ScrobbleInput struct {
