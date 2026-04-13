@@ -138,22 +138,22 @@ spin album <artist> <album>                                 # scrobble album
 ```
 
 Available CLI mode options:
-- `--start-time`: start time of listen (HH:MM)
-- `--end-time`: end time of listen (HH:MM) - calculates start from track duration
+- `--end-now`: calculate start time from track/album duration
 - `--date`: date of listen (YYYY-MM-DD)
+- `--timestamp`: time of listen (HH:MM)
 - `-p|--profile`: profile to scrobble with (default: active profile)
 - `--dryrun`: show what would be scrobbled without submitting
 
 CLI mode examples:
 
 ```sh
-spin track "Best Frenz" "Replay"                            # scrobble track now
-spin track "Joywave" "Nice House" --start-time 12:46        # specific start time today
-spin track "Joywave" "Nice House" --end-time 14:00          # specific end time today
-spin track "Joywave" "Nice House" --date 2026-04-10         # scrobble with specific date
-spin track "Joywave" "Nice House" --dryrun                  # preview without scrobbling
-spin album "Coldplay" "X&Y" --start-time 15:32              # album starting at specific time
-spin album "Electric Guest" "Mondo" --date 2026-01-31 --start-time 01:14  # specific date and time
+spin track "Best Frenz" "Replay"                           # scrobble track now
+spin track "Joywave" "Nice House" --end-now               # calculate start from duration
+spin track "Joywave" "Nice House" --date 2026-04-10      # scrobble with specific date
+spin track "Joywave" "Nice House" --timestamp 12:46       # scrobble at specific time
+spin track "Joywave" "Nice House" --dryrun               # preview without scrobbling
+spin album "Coldplay" "X&Y" --end-now                    # album ending now
+spin album "Electric Guest" "Mondo" --date 2026-01-31 --timestamp 01:14  # specific date and time
 ```
 
 ### History
