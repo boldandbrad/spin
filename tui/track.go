@@ -100,10 +100,15 @@ func TrackTUI(profileFlag string, dryrun bool) error {
 	ts := scrobble.FormatTimestamp(timestamp)
 	tsFormatted := timestamp.Format("2006-01-02 15:04")
 
+	username, err := profile.ResolveProfile(profileFlag)
+	if err != nil {
+		return err
+	}
+
 	if dryrun {
-		fmt.Printf("Would scrobble:\n")
+		fmt.Printf("Would scrobble to %s:\n", username)
 	} else {
-		fmt.Printf("Successfully scrobbled:\n")
+		fmt.Printf("Scrobbled to %s:\n", username)
 	}
 	fmt.Printf("  1. %s - %s (%s)\n", artistName, selectedTrack.Name, tsFormatted)
 

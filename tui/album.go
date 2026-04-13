@@ -65,10 +65,9 @@ func AlbumTUI(profileFlag string, dryrun bool) error {
 		return nil
 	}
 
-	if dryrun {
-		fmt.Printf("Would scrobble:\n")
-	} else {
-		fmt.Printf("Successfully scrobbled:\n")
+	username, err := profile.ResolveProfile(profileFlag)
+	if err != nil {
+		return err
 	}
 
 	var timestamp time.Time
@@ -95,6 +94,12 @@ func AlbumTUI(profileFlag string, dryrun bool) error {
 				timestamp = t
 			}
 		}
+	}
+
+	if dryrun {
+		fmt.Printf("Would scrobble to %s:\n", username)
+	} else {
+		fmt.Printf("Scrobbled to %s:\n", username)
 	}
 
 	currentTimestamp := timestamp

@@ -70,13 +70,18 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			return fmt.Errorf("invalid --date: %w", err)
 		}
 
+		username, err := profile.ResolveProfile(profileFlag)
+		if err != nil {
+			return err
+		}
+
 		ts := scrobble.FormatTimestamp(timestamp)
 		tsFormatted := timestamp.Format("2006-01-02 15:04")
 
 		if dryrun {
-			fmt.Printf("Would scrobble:\n")
+			fmt.Printf("Would scrobble to %s:\n", username)
 		} else {
-			fmt.Printf("Successfully scrobbled:\n")
+			fmt.Printf("Scrobbled to %s:\n", username)
 		}
 		fmt.Printf("  1. %s - %s (%s)\n", artist, track, tsFormatted)
 

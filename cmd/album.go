@@ -78,10 +78,15 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 			return fmt.Errorf("invalid --date: %w", err)
 		}
 
+		username, err := profile.ResolveProfile(profileFlag)
+		if err != nil {
+			return err
+		}
+
 		if dryrun {
-			fmt.Printf("Would scrobble:\n")
+			fmt.Printf("Would scrobble to %s:\n", username)
 		} else {
-			fmt.Printf("Successfully scrobbled:\n")
+			fmt.Printf("Scrobbled to %s:\n", username)
 		}
 
 		currentTimestamp := timestamp
