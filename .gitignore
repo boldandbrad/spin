@@ -6,6 +6,9 @@ spin
 *.so
 *.dylib
 
+# Logs
+tea_debug.log
+
 # Test binary
 *.test
 
