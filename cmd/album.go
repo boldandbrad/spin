@@ -124,18 +124,12 @@ func scrobbleAlbum(input *scrobbleInput) error {
 
 	if input.Dryrun {
 		fmt.Printf("Would scrobble to %s:\n", username)
-	} else {
-		fmt.Printf("Scrobbled to %s:\n", username)
-	}
-
-	currentTs := input.Timestamp
-	for i, track := range input.Tracks {
-		tsFormatted := currentTs.Format("2006-01-02 15:04")
-		fmt.Printf("%2d. %s - %s (%s)\n", i+1, input.Artist, track.Name, tsFormatted)
-		currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
-	}
-
-	if input.Dryrun {
+		currentTs := input.Timestamp
+		for i, track := range input.Tracks {
+			tsFormatted := currentTs.Format("2006-01-02 15:04")
+			fmt.Printf("%2d. %s - %s (%s)\n", i+1, input.Artist, track.Name, tsFormatted)
+			currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
+		}
 		return nil
 	}
 
@@ -145,12 +139,16 @@ func scrobbleAlbum(input *scrobbleInput) error {
 	}
 
 	client := api.NewClient()
-	currentTs = input.Timestamp
-	for _, track := range input.Tracks {
+	currentTs := input.Timestamp
+	for i, track := range input.Tracks {
 		ts := scrobble.FormatTimestamp(currentTs)
 		if err := client.ScrobbleTrack(input.Artist, track.Name, ts, p.SessionKey); err != nil {
-			fmt.Printf("Warning: failed to scrobble %s: %v\n", track.Name, err)
+			fmt.Printf("%2d. %s - %s: failed to scrobble: %v\n", i+1, input.Artist, track.Name, err)
+			currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
+			continue
 		}
+		tsFormatted := currentTs.Format("2006-01-02 15:04")
+		fmt.Printf("%2d. %s - %s (%s)\n", i+1, input.Artist, track.Name, tsFormatted)
 		currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
 	}
 
