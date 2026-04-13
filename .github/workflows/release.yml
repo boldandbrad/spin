@@ -102,7 +102,11 @@ jobs:
           tag_name: ${{ inputs.version }}
           name: ${{ inputs.version }}
           draft: false
-          prerelease: false
+          prerelease: |
+            ${{ contains(inputs.version, 'test') ||
+               contains(inputs.version, 'beta') ||
+               contains(inputs.version, 'alpha') ||
+               contains(inputs.version, 'rc') }}
           files: |
             artifacts/*.tar.gz
             artifacts/*.zip
