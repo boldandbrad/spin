@@ -11,8 +11,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/boldandbrad/spin/internal/config"
 )
 
 const (
@@ -152,16 +150,10 @@ func NewClient() *Client {
 }
 
 func (c *Client) GetAPIKey() string {
-	if key := config.GetLastFMAPIKey(); key != "" {
-		return key
-	}
 	return c.apiKey
 }
 
 func (c *Client) GetAPISecret() string {
-	if secret := config.GetLastFMAPISecret(); secret != "" {
-		return secret
-	}
 	return c.apiSecret
 }
 

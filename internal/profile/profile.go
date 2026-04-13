@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 
-	"github.com/boldandbrad/spin/internal/config"
 	"github.com/boldandbrad/spin/internal/keyring"
 )
 
@@ -22,8 +23,42 @@ type ProfileStore struct {
 	Profiles []Profile `json:"profiles"`
 }
 
+func appDataDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home, _ = os.Getwd()
+	}
+	switch runtime.GOOS {
+	case "darwin":
+		return filepath.Join(home, "Library", "Application Support", "spin")
+	case "linux":
+		xdg := os.Getenv("XDG_DATA_HOME")
+		if xdg != "" {
+			return filepath.Join(xdg, "spin")
+		}
+		return filepath.Join(home, ".local", "share", "spin")
+	default:
+		return filepath.Join(home, ".spin")
+	}
+}
+
+func ensureAppDataDir() error {
+	return os.MkdirAll(appDataDir(), 0700)
+}
+
+func profilesFile() string {
+	return filepath.Join(appDataDir(), "profiles.json")
+}
+
+func activeProfileFile() string {
+	return filepath.Join(appDataDir(), "active_profile")
+}
+
 func LoadProfiles() (*ProfileStore, error) {
-	dataFile := config.ProfileDataFile()
+	if err := ensureAppDataDir(); err != nil {
+		return nil, fmt.Errorf("failed to create data directory: %w", err)
+	}
+	dataFile := profilesFile()
 
 	data, err := os.ReadFile(dataFile)
 	if err != nil {
@@ -42,7 +77,7 @@ func LoadProfiles() (*ProfileStore, error) {
 }
 
 func SaveProfiles(store *ProfileStore) error {
-	dataFile := config.ProfileDataFile()
+	dataFile := profilesFile()
 
 	data, err := json.MarshalIndent(store, "", "  ")
 	if err != nil {
@@ -99,7 +134,7 @@ func ListProfiles() ([]Profile, error) {
 }
 
 func GetActiveProfile() (string, error) {
-	dataFile := config.ActiveProfileFile()
+	dataFile := activeProfileFile()
 
 	data, err := os.ReadFile(dataFile)
 	if err != nil {
@@ -137,7 +172,7 @@ func SetActiveProfile(username string) error {
 		return fmt.Errorf("profile %s not found", username)
 	}
 
-	dataFile := config.ActiveProfileFile()
+	dataFile := activeProfileFile()
 	if err := os.WriteFile(dataFile, []byte(username), 0600); err != nil {
 		return fmt.Errorf("failed to write active profile: %w", err)
 	}
@@ -178,7 +213,7 @@ func DeleteProfile(username string) error {
 		if len(store.Profiles) > 0 {
 			return SetActiveProfile(store.Profiles[0].Username)
 		}
-		os.Remove(config.ActiveProfileFile())
+		os.Remove(activeProfileFile())
 	}
 
 	return nil
