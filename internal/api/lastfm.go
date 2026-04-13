@@ -376,7 +376,7 @@ func (c *Client) createSignature(params map[string]string) string {
 	}
 	sig += c.GetAPISecret()
 
-	hash := md5.Sum([]byte(sig))
+	hash := md5.Sum([]byte(sig)) //nolint:gosec // Last.fm API requires MD5 signature
 	return hex.EncodeToString(hash[:])
 }
 
