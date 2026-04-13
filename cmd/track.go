@@ -93,8 +93,8 @@ func scrobbleTrack(artist, track string, timestamp time.Time, profileFlag string
 	}
 
 	if dryrun {
-		fmt.Printf("Would scrobble to %s:\n", username)
-		fmt.Printf("  1. %s - %s (%s)\n", artist, track, tsFormatted)
+		fmt.Printf("Would scrobble to %s:\n\n", username)
+		fmt.Printf("%2d. %s - %s (%s)\n", 1, artist, track, tsFormatted)
 		return nil
 	}
 
@@ -105,11 +105,11 @@ func scrobbleTrack(artist, track string, timestamp time.Time, profileFlag string
 
 	client := api.NewClient()
 	if err := client.ScrobbleTrack(artist, track, ts, p.SessionKey); err != nil {
-		return fmt.Errorf("  1. %s - %s: failed to scrobble: %w", artist, track, err)
+		return fmt.Errorf("%2d. %s - %s: failed to scrobble: %w", 1, artist, track, err)
 	}
 
-	fmt.Printf("Scrobbled to %s:\n", username)
-	fmt.Printf("  1. %s - %s (%s)\n", artist, track, tsFormatted)
+	fmt.Printf("Scrobbled to %s:\n\n", username)
+	fmt.Printf("%2d. %s - %s (%s)\n", 1, artist, track, tsFormatted)
 
 	return nil
 }

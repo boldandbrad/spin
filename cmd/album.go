@@ -122,12 +122,21 @@ func scrobbleAlbum(input *scrobbleInput) error {
 		return err
 	}
 
+	maxWidth := 0
+	for _, track := range input.Tracks {
+		width := len(input.Artist) + 3 + len(track.Name)
+		if width > maxWidth {
+			maxWidth = width
+		}
+	}
+
 	if input.Dryrun {
-		fmt.Printf("Would scrobble to %s:\n", username)
+		fmt.Printf("Would scrobble to %s:\n\n", username)
 		currentTs := input.Timestamp
 		for i, track := range input.Tracks {
 			tsFormatted := currentTs.Format("2006-01-02 15:04")
-			fmt.Printf("%2d. %s - %s (%s)\n", i+1, input.Artist, track.Name, tsFormatted)
+			nameWidth := len(input.Artist) + 3 + len(track.Name)
+			fmt.Printf("%2d. %s - %s%*s (%s)\n", i+1, input.Artist, track.Name, maxWidth-nameWidth, "", tsFormatted)
 			currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
 		}
 		return nil
@@ -143,12 +152,14 @@ func scrobbleAlbum(input *scrobbleInput) error {
 	for i, track := range input.Tracks {
 		ts := scrobble.FormatTimestamp(currentTs)
 		if err := client.ScrobbleTrack(input.Artist, track.Name, ts, p.SessionKey); err != nil {
-			fmt.Printf("%2d. %s - %s: failed to scrobble: %v\n", i+1, input.Artist, track.Name, err)
+			nameWidth := len(input.Artist) + 3 + len(track.Name)
+			fmt.Printf("%2d. %s - %s%*s: failed to scrobble: %v\n", i+1, input.Artist, track.Name, maxWidth-nameWidth, "", err)
 			currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
 			continue
 		}
 		tsFormatted := currentTs.Format("2006-01-02 15:04")
-		fmt.Printf("%2d. %s - %s (%s)\n", i+1, input.Artist, track.Name, tsFormatted)
+		nameWidth := len(input.Artist) + 3 + len(track.Name)
+		fmt.Printf("%2d. %s - %s%*s (%s)\n", i+1, input.Artist, track.Name, maxWidth-nameWidth, "", tsFormatted)
 		currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
 	}
 

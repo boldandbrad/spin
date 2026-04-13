@@ -23,7 +23,7 @@ var profileListCmd = &cobra.Command{
 
 		activeProfile, _ := profile.GetActiveProfile()
 
-		fmt.Println("Profiles:")
+		fmt.Println("Profiles:\n")
 		for _, p := range profiles {
 			marker := "  "
 			if p.Username == activeProfile {

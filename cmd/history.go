@@ -34,6 +34,19 @@ var historyCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Recent scrobbles for %s:\n\n", username)
+
+		maxWidth := 0
+		for _, track := range tracks {
+			artist := track.Artist.Text
+			if artist == "" {
+				artist = "Unknown Artist"
+			}
+			width := len(artist) + 3 + len(track.Name)
+			if width > maxWidth {
+				maxWidth = width
+			}
+		}
+
 		for i, track := range tracks {
 			dateStr := ""
 			if track.Date.UTS != "" {
@@ -45,8 +58,9 @@ var historyCmd = &cobra.Command{
 			if artist == "" {
 				artist = "Unknown Artist"
 			}
+			nameWidth := len(artist) + 3 + len(track.Name)
 			if dateStr != "" {
-				fmt.Printf("%2d. %s - %s (%s)\n", i+1, artist, track.Name, dateStr)
+				fmt.Printf("%2d. %s - %s%*s (%s)\n", i+1, artist, track.Name, maxWidth-nameWidth, "", dateStr)
 			} else {
 				fmt.Printf("%2d. %s - %s\n", i+1, artist, track.Name)
 			}
