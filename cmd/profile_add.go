@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
+	"charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
 	"github.com/boldandbrad/spin/internal/api"
 	"github.com/boldandbrad/spin/internal/profile"
 	"github.com/spf13/cobra"
@@ -18,15 +19,28 @@ var profileAddCmd = &cobra.Command{
 
 		fmt.Printf("Adding profile for %s...\n", username)
 
-		client := api.NewClient()
-
-		fmt.Print("Enter last.fm password: ")
 		var password string
-		fmt.Fscanln(os.Stdin, &password)
+		form := huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Title("Password").
+					Placeholder("last.fm password").
+					Password(true).
+					Value(&password).
+					Validate(func(s string) error {
+						if s == "" {
+							return fmt.Errorf("password is required")
+						}
+						return nil
+					}),
+			),
+		).WithProgramOptions(tea.WithoutCatchPanics())
 
-		if password == "" {
-			return fmt.Errorf("password is required")
+		if err := form.Run(); err != nil {
+			return err
 		}
+
+		client := api.NewClient()
 
 		sessionKey, err := client.GetSessionKey(username, password)
 		if err != nil {
@@ -43,5 +57,4 @@ var profileAddCmd = &cobra.Command{
 }
 
 func init() {
-	profileAddCmd.Flags().StringP("password", "p", "", "last.fm password (will prompt if not provided)")
 }
