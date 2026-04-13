@@ -93,6 +93,7 @@ spin profile list                       # list added profiles
 spin profile set <lastfm-username>      # set the active profile
 spin profile get                        # get the active profile
 spin profile delete <lastfm-username>   # remove a profile
+spin profile open                       # open active profile in browser
 ```
 
 > The active profile can also be set using the `-p/--profile` flag in CLI mode.

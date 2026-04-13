@@ -16,4 +16,5 @@ func init() {
 	profileCmd.AddCommand(profileSetCmd)
 	profileCmd.AddCommand(profileGetCmd)
 	profileCmd.AddCommand(profileDeleteCmd)
+	profileCmd.AddCommand(profileOpenCmd)
 }
