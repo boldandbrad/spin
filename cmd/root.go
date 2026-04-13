@@ -2,17 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-var (
-	version = "dev"
-	debug   bool
-)
+var version = "dev"
 
 var rootCmd = &cobra.Command{
 	Use:   "spin",
@@ -30,17 +25,6 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "enable debug logging")
-
-	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		if debug {
-			log.SetFlags(log.LstdFlags | log.Lshortfile)
-			log.SetOutput(os.Stderr)
-		} else {
-			log.SetOutput(io.Discard)
-		}
-	}
-
 	rootCmd.AddCommand(profileCmd)
 	rootCmd.AddCommand(trackCmd)
 	rootCmd.AddCommand(albumCmd)

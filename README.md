@@ -75,7 +75,6 @@ spin album
 ```sh
 spin --version       # print version
 spin --help          # print help message
-spin --debug         # enable debug logging
 ```
 
 ### Profiles

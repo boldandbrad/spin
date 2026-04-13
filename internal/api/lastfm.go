@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -183,17 +182,10 @@ func (c *Client) GetSessionKey(username, password string) (string, error) {
 		"format":   {"json"},
 	}
 
-	log.Printf("[DEBUG] Auth request params: api_key=%s, method=auth.getMobileSession, username=%s", c.GetAPIKey(), username)
-	log.Printf("[DEBUG] Signature: %s", signature)
-
-	data, statusCode, err := c.doRequest(params)
+	data, _, err := c.doRequest(params)
 	if err != nil {
-		log.Printf("[ERROR] Auth request failed: %v", err)
 		return "", err
 	}
-
-	log.Printf("[DEBUG] Auth response status: %d", statusCode)
-	log.Printf("[DEBUG] Auth response body: %s", data)
 
 	var authResp struct {
 		Session struct {
@@ -204,19 +196,15 @@ func (c *Client) GetSessionKey(username, password string) (string, error) {
 	if err := json.Unmarshal([]byte(data), &authResp); err != nil {
 		var errResp ErrorResponse
 		if err := json.Unmarshal([]byte(data), &errResp); err == nil {
-			log.Printf("[ERROR] Last.fm API error: %d - %s", errResp.Error, errResp.Message)
 			return "", fmt.Errorf("last.fm error %d: %s", errResp.Error, errResp.Message)
 		}
-		log.Printf("[ERROR] Failed to parse auth response: %v", err)
 		return "", fmt.Errorf("failed to parse auth response: %w", err)
 	}
 
 	if authResp.Session.Key == "" {
-		log.Printf("[ERROR] No session key in response")
 		return "", fmt.Errorf("no session key received from last.fm")
 	}
 
-	log.Printf("[DEBUG] Successfully got session key for user: %s", authResp.Session.Name)
 	return authResp.Session.Key, nil
 }
 
@@ -256,14 +244,11 @@ func (c *Client) SearchAlbum(artist, album string) ([]AlbumSearchInfo, error) {
 		return nil, err
 	}
 
-	log.Printf("[DEBUG] Album search response: %s", data)
-
 	var result AlbumSearchResult
 	if err := json.Unmarshal([]byte(data), &result); err != nil {
 		return nil, err
 	}
 
-	log.Printf("[DEBUG] Found %d albums", len(result.Results.AlbumMatches.Album))
 	return result.Results.AlbumMatches.Album, nil
 }
 
@@ -282,8 +267,6 @@ func (c *Client) GetAlbumInfo(artist, album string) (*AlbumDetailResponse, error
 		return nil, err
 	}
 
-	log.Printf("[DEBUG] Album info response: %s", data)
-
 	var result AlbumDetailResponse
 	if err := json.Unmarshal([]byte(data), &result); err != nil {
 		return nil, err
@@ -293,19 +276,14 @@ func (c *Client) GetAlbumInfo(artist, album string) (*AlbumDetailResponse, error
 }
 
 func (c *Client) ScrobbleTrack(artist, track, timestamp, sessionKey string) error {
-	signatureParams := map[string]string{
+	signature := c.createSignature(map[string]string{
 		"api_key":   c.GetAPIKey(),
 		"artist":    artist,
 		"method":    "track.scrobble",
 		"sk":        sessionKey,
 		"timestamp": timestamp,
 		"track":     track,
-	}
-
-	log.Printf("[DEBUG] Scrobble signature params: %v", signatureParams)
-
-	signature := c.createSignature(signatureParams)
-	log.Printf("[DEBUG] Generated signature: %s", signature)
+	})
 
 	params := url.Values{
 		"api_key":   {c.GetAPIKey()},
@@ -318,14 +296,10 @@ func (c *Client) ScrobbleTrack(artist, track, timestamp, sessionKey string) erro
 		"format":    {"json"},
 	}
 
-	log.Printf("[DEBUG] Scrobble request params: %s", params.Encode())
-
 	data, _, err := c.doRequest(params)
 	if err != nil {
 		return err
 	}
-
-	log.Printf("[DEBUG] Scrobble response: %s", data)
 
 	var errResp ErrorResponse
 	if err := json.Unmarshal([]byte(data), &errResp); err == nil && errResp.Error != 0 {
@@ -413,8 +387,6 @@ func (c *Client) doRequest(params url.Values) (string, int, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	log.Printf("[DEBUG] Request URL: %s", lastFMBaseURL)
-	log.Printf("[DEBUG] Request body: %s", params.Encode())
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -423,7 +395,6 @@ func (c *Client) doRequest(params url.Values) (string, int, error) {
 	defer resp.Body.Close()
 
 	statusCode := resp.StatusCode
-	log.Printf("[DEBUG] Response status code: %d", statusCode)
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
