@@ -14,6 +14,7 @@ import (
 func TrackTUI(profileFlag string, dryrun bool) error {
 	artist := ""
 	track := ""
+	timestampMode := 1
 	dateInput := ""
 	timeInput := ""
 
@@ -23,8 +24,14 @@ func TrackTUI(profileFlag string, dryrun bool) error {
 			huh.NewInput().Title("Track").Value(&track).Placeholder("e.g., Paranoid Android"),
 		),
 		huh.NewGroup(
-			huh.NewInput().Title("Date (YYYY-MM-DD)").Value(&dateInput).Placeholder("optional"),
-			huh.NewInput().Title("Time (HH:MM)").Value(&timeInput).Placeholder("optional"),
+			huh.NewSelect[int]().
+				Title("When did you listen?").
+				Options(
+					huh.NewOption("Starting now", 0),
+					huh.NewOption("Ending now", 1),
+					huh.NewOption("Custom start time", 2),
+				).
+				Value(&timestampMode),
 		),
 	)
 
@@ -36,19 +43,15 @@ func TrackTUI(profileFlag string, dryrun bool) error {
 		return nil
 	}
 
-	timestamp := time.Now()
-	if dateInput != "" || timeInput != "" {
-		if timeInput != "" {
-			t, err := scrobble.ParseTimeOfDay(timeInput)
-			if err == nil {
-				timestamp = t
-			}
-		}
-		if dateInput != "" {
-			t, err := scrobble.ParseDateTime(dateInput, timestamp.Format("15:04"))
-			if err == nil {
-				timestamp = t
-			}
+	if timestampMode == 2 {
+		timeForm := huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().Title("Date (YYYY-MM-DD)").Value(&dateInput).Placeholder("e.g., 2026-04-12"),
+				huh.NewInput().Title("Time (HH:MM)").Value(&timeInput).Placeholder("e.g., 15:00"),
+			),
+		)
+		if err := timeForm.Run(); err != nil {
+			return err
 		}
 	}
 
@@ -67,6 +70,32 @@ func TrackTUI(profileFlag string, dryrun bool) error {
 	artistName := selectedTrack.Artist
 	if artistName == "" {
 		artistName = artist
+	}
+
+	var timestamp time.Time
+	switch timestampMode {
+	case 0:
+		timestamp = time.Now()
+	case 1:
+		timestamp = time.Now()
+		duration, err := client.GetTrackInfo(artistName, selectedTrack.Name)
+		if err == nil && duration > 0 {
+			timestamp = timestamp.Add(-time.Duration(duration) * time.Millisecond)
+		}
+	case 2:
+		timestamp = time.Now()
+		if timeInput != "" {
+			t, err := scrobble.ParseTimeOfDay(timeInput)
+			if err == nil {
+				timestamp = t
+			}
+		}
+		if dateInput != "" {
+			t, err := scrobble.ParseDateTime(dateInput, timestamp.Format("15:04"))
+			if err == nil {
+				timestamp = t
+			}
+		}
 	}
 
 	ts := scrobble.FormatTimestamp(timestamp)

@@ -28,3 +28,7 @@ func ParseDateTime(dateStr, timeStr string) (time.Time, error) {
 	combined := fmt.Sprintf("%s %s", dateStr, timeStr)
 	return time.Parse("2006-01-02 15:04", combined)
 }
+
+func ParseDate(dateStr string) (time.Time, error) {
+	return time.Parse("2006-01-02", dateStr)
+}

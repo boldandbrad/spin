@@ -105,24 +105,28 @@ albums. Both commands can be used in either TUI or CLI mode.
 
 #### TUI mode
 
-TUI mode interactively prompts for scrobble deetails and is launched when no
-arguments are provided:
+TUI mode interactively prompts for scrobble details, auto-selects the best
+match, and scrobbles automatically. TUI mode is launched when no arguments are
+provided:
 
 ```sh
 spin track      # interactively search for and scrobble a track
 spin album      # interactively search for and scrobble an album
 ```
 
-TUI mode example:
-
-[TODO: add tui mode gif]
+In addition to prompting for the `artist` and `track`/`album`, TUI mode also
+allows you to specify the scrobble date and time:
+- **Starting now**: Scrobble at the current time
+- **Ending now**: Calculate start time from track/album duration
+- **Custom start time**: Provide a specific date and time
 
 Available TUI mode options:
+- `-p|--profile`: profile to scrobble with (default: active profile)
 - `--dryrun`: show what would be scrobbled without submitting
 
 #### CLI mode
 
-CLI mode is enabled when arguments are present. Both commands require two
+CLI mode scrobbles directly using provided arguments. Both commands require two
 positional arguments: `artist`, and then `track` or `album` respectively.
 
 ```sh
@@ -131,8 +135,9 @@ spin album <artist> <album>                                 # scrobble album
 ```
 
 Available CLI mode options:
-- `-d|--date`: date of listen (YYYY-MM-DD)
-- `-t|--timestamp`: time of listen (HH:MM)
+- `--start-time`: start time of listen (HH:MM)
+- `--end-time`: end time of listen (HH:MM) - calculates start from track duration
+- `--date`: date of listen (YYYY-MM-DD)
 - `-p|--profile`: profile to scrobble with (default: active profile)
 - `--dryrun`: show what would be scrobbled without submitting
 
@@ -140,10 +145,12 @@ CLI mode examples:
 
 ```sh
 spin track "Best Frenz" "Replay"                            # scrobble track now
-spin track "Joywave" "Nice House" -t 12:46 -p boldandbrad   # specific time today and profile
+spin track "Joywave" "Nice House" --start-time 12:46        # specific start time today
+spin track "Joywave" "Nice House" --end-time 14:00          # specific end time today
+spin track "Joywave" "Nice House" --date 2026-04-10         # scrobble with specific date
 spin track "Joywave" "Nice House" --dryrun                  # preview without scrobbling
-spin album "Coldplay" "X&Y" -t 15:32                        # specific time today
-spin album "Electric Guest" "Mondo" -d 2026-01-31 -t 01:14  # specific date and time
+spin album "Coldplay" "X&Y" --start-time 15:32              # album starting at specific time
+spin album "Electric Guest" "Mondo" --date 2026-01-31 --start-time 01:14  # specific date and time
 ```
 
 ### History

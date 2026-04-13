@@ -22,9 +22,14 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 	Args: cobra.RangeArgs(0, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		profileFlag, _ := cmd.Flags().GetString("profile")
+		startTimeFlag, _ := cmd.Flags().GetString("start-time")
+		endTimeFlag, _ := cmd.Flags().GetString("end-time")
 		dateFlag, _ := cmd.Flags().GetString("date")
-		timeFlag, _ := cmd.Flags().GetString("timestamp")
 		dryrun, _ := cmd.Flags().GetBool("dryrun")
+
+		if startTimeFlag != "" && endTimeFlag != "" {
+			return fmt.Errorf("cannot specify both --start-time and --end-time")
+		}
 
 		if len(args) == 0 {
 			return tui.AlbumTUI(profileFlag, dryrun)
@@ -36,25 +41,6 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 
 		artist := args[0]
 		album := args[1]
-
-		timestamp := time.Now()
-		if timeFlag != "" {
-			var err error
-			timestamp, err = scrobble.ParseTimeOfDay(timeFlag)
-			if err != nil {
-				return err
-			}
-		}
-		if dateFlag != "" {
-			var err error
-			timestamp, err = scrobble.ParseDateTime(dateFlag, timestamp.Format("15:04"))
-			if err != nil {
-				return err
-			}
-		}
-
-		ts := scrobble.FormatTimestamp(timestamp)
-		tsFormatted := timestamp.Format("2006-01-02 15:04")
 
 		client := api.NewClient()
 		albumInfo, err := client.GetAlbumInfo(artist, album)
@@ -69,10 +55,44 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 		if dryrun {
 			fmt.Printf("Would scrobble:\n")
 		} else {
-			fmt.Printf("Successfully scrobbled:\n")
+			fmt.Printf("Successfully scrobble:\n")
 		}
+
+		var timestamp time.Time
+		var totalDuration int
+		for _, track := range albumInfo.Album.Tracks.Track {
+			totalDuration += track.Duration
+		}
+
+		if endTimeFlag != "" {
+			t, err := scrobble.ParseTimeOfDay(endTimeFlag)
+			if err != nil {
+				return fmt.Errorf("invalid --end-time: %w", err)
+			}
+			timestamp = t.Add(-time.Duration(totalDuration) * time.Second)
+		} else if startTimeFlag != "" {
+			t, err := scrobble.ParseTimeOfDay(startTimeFlag)
+			if err != nil {
+				return fmt.Errorf("invalid --start-time: %w", err)
+			}
+			timestamp = t
+		} else {
+			timestamp = time.Now()
+		}
+
+		if dateFlag != "" {
+			t, err := scrobble.ParseDate(dateFlag)
+			if err != nil {
+				return fmt.Errorf("invalid --date: %w", err)
+			}
+			timestamp = time.Date(t.Year(), t.Month(), t.Day(), timestamp.Hour(), timestamp.Minute(), 0, 0, timestamp.Location())
+		}
+
+		currentTimestamp := timestamp
 		for i, track := range albumInfo.Album.Tracks.Track {
+			tsFormatted := currentTimestamp.Format("2006-01-02 15:04")
 			fmt.Printf("%2d. %s - %s (%s)\n", i+1, artist, track.Name, tsFormatted)
+			currentTimestamp = currentTimestamp.Add(time.Duration(track.Duration) * time.Second)
 		}
 
 		if dryrun {
@@ -92,10 +112,13 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 			return fmt.Errorf("failed to get credential: %w", err)
 		}
 
+		currentTimestamp = timestamp
 		for _, track := range albumInfo.Album.Tracks.Track {
+			ts := scrobble.FormatTimestamp(currentTimestamp)
 			if err := client.ScrobbleTrack(artist, track.Name, ts, cred.SessionKey); err != nil {
 				fmt.Fprintf(cmd.OutOrStderr(), "Warning: failed to scrobble %s: %v\n", track.Name, err)
 			}
+			currentTimestamp = currentTimestamp.Add(time.Duration(track.Duration) * time.Second)
 		}
 
 		return nil
@@ -103,8 +126,9 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 }
 
 func init() {
-	albumCmd.Flags().StringP("date", "d", "", "date of listen (YYYY-MM-DD)")
-	albumCmd.Flags().StringP("timestamp", "t", "", "time of listen (HH:MM)")
+	albumCmd.Flags().String("start-time", "", "start time of listen (HH:MM)")
+	albumCmd.Flags().String("end-time", "", "end time of listen (HH:MM)")
+	albumCmd.Flags().String("date", "", "date of listen (YYYY-MM-DD)")
 	albumCmd.Flags().StringP("profile", "p", "", "profile to scrobble with")
 	albumCmd.Flags().Bool("dryrun", false, "show what would be scrobbled without submitting")
 }

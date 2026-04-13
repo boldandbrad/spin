@@ -357,6 +357,38 @@ func (c *Client) GetRecentTracks(username string, limit int) ([]TrackInfo, error
 	return result.RecentTracks.Track, nil
 }
 
+func (c *Client) GetTrackInfo(artist, track string) (int, error) {
+	params := url.Values{
+		"method":      {"track.getInfo"},
+		"api_key":     {c.GetAPIKey()},
+		"artist":      {artist},
+		"track":       {track},
+		"autocorrect": {"1"},
+		"format":      {"json"},
+	}
+
+	data, _, err := c.doRequest(params)
+	if err != nil {
+		return 0, err
+	}
+
+	var result struct {
+		Track struct {
+			Duration string `json:"duration"`
+		} `json:"track"`
+	}
+	if err := json.Unmarshal([]byte(data), &result); err != nil {
+		return 0, err
+	}
+
+	duration := 0
+	if result.Track.Duration != "" {
+		fmt.Sscanf(result.Track.Duration, "%d", &duration)
+	}
+
+	return duration, nil
+}
+
 func (c *Client) createSignature(params map[string]string) string {
 	var keys []string
 	for k := range params {
