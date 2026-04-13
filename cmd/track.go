@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/boldandbrad/spin/internal/api"
-	"github.com/boldandbrad/spin/internal/keyring"
 	"github.com/boldandbrad/spin/internal/profile"
 	"github.com/boldandbrad/spin/internal/scrobble"
 	"github.com/boldandbrad/spin/tui"
@@ -102,13 +101,13 @@ func scrobbleTrack(artist, track string, timestamp time.Time, profileFlag string
 	fmt.Printf("Scrobbled to %s:\n", username)
 	fmt.Printf("  1. %s - %s (%s)\n", artist, track, tsFormatted)
 
-	cred, err := keyring.GetCredential(username)
+	p, err := profile.GetCredential(username)
 	if err != nil {
 		return fmt.Errorf("failed to get credential: %w", err)
 	}
 
 	client := api.NewClient()
-	if err := client.ScrobbleTrack(artist, track, ts, cred.SessionKey); err != nil {
+	if err := client.ScrobbleTrack(artist, track, ts, p.SessionKey); err != nil {
 		return fmt.Errorf("failed to scrobble: %w", err)
 	}
 

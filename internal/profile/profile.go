@@ -7,16 +7,14 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/boldandbrad/spin/internal/keyring"
+	"github.com/zalando/go-keyring"
 )
 
-type Credential struct {
-	SessionKey string
-}
+const keyringService = "spin"
 
 type Profile struct {
 	Username   string `json:"username"`
-	HasSession bool   `json:"has_session"`
+	SessionKey string `json:"-"`
 }
 
 type ProfileStore struct {
@@ -52,6 +50,22 @@ func profilesFile() string {
 
 func activeProfileFile() string {
 	return filepath.Join(appDataDir(), "active_profile")
+}
+
+func setCredential(username, sessionKey string) error {
+	return keyring.Set(keyringService, username, sessionKey)
+}
+
+func getCredential(username string) (*Profile, error) {
+	item, err := keyring.Get(keyringService, username)
+	if err != nil {
+		return nil, fmt.Errorf("credential not found for user %s: %w", username, err)
+	}
+	return &Profile{Username: username, SessionKey: item}, nil
+}
+
+func deleteCredential(username string) error {
+	return keyring.Delete(keyringService, username)
 }
 
 func LoadProfiles() (*ProfileStore, error) {
@@ -103,13 +117,13 @@ func AddProfile(username string, sessionKey string) error {
 		}
 	}
 
-	if err := keyring.SetCredential(username, sessionKey); err != nil {
+	if err := setCredential(username, sessionKey); err != nil {
 		return fmt.Errorf("failed to store credential: %w", err)
 	}
 
 	store.Profiles = append(store.Profiles, Profile{
 		Username:   username,
-		HasSession: sessionKey != "",
+		SessionKey: sessionKey,
 	})
 
 	if err := SaveProfiles(store); err != nil {
@@ -200,7 +214,7 @@ func DeleteProfile(username string) error {
 
 	store.Profiles = append(store.Profiles[:found], store.Profiles[found+1:]...)
 
-	if err := keyring.DeleteCredential(username); err != nil {
+	if err := deleteCredential(username); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: failed to delete credential from keyring: %v\n", err)
 	}
 
@@ -239,16 +253,6 @@ func ResolveProfile(profileFlag string) (string, error) {
 	return GetActiveProfile()
 }
 
-func GetCredentialForProfile(profileFlag string) (*Credential, error) {
-	username, err := ResolveProfile(profileFlag)
-	if err != nil {
-		return nil, err
-	}
-
-	cred, err := keyring.GetCredential(username)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get credential: %w", err)
-	}
-
-	return &Credential{SessionKey: cred.SessionKey}, nil
+func GetCredential(username string) (*Profile, error) {
+	return getCredential(username)
 }

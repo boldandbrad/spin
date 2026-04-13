@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/boldandbrad/spin/internal/api"
-	"github.com/boldandbrad/spin/internal/keyring"
 	"github.com/boldandbrad/spin/internal/profile"
 	"github.com/boldandbrad/spin/internal/scrobble"
 	"github.com/boldandbrad/spin/tui"
@@ -140,7 +139,7 @@ func scrobbleAlbum(input *scrobbleInput) error {
 		return nil
 	}
 
-	cred, err := keyring.GetCredential(username)
+	p, err := profile.GetCredential(username)
 	if err != nil {
 		return fmt.Errorf("failed to get credential: %w", err)
 	}
@@ -149,7 +148,7 @@ func scrobbleAlbum(input *scrobbleInput) error {
 	currentTs = input.Timestamp
 	for _, track := range input.Tracks {
 		ts := scrobble.FormatTimestamp(currentTs)
-		if err := client.ScrobbleTrack(input.Artist, track.Name, ts, cred.SessionKey); err != nil {
+		if err := client.ScrobbleTrack(input.Artist, track.Name, ts, p.SessionKey); err != nil {
 			fmt.Printf("Warning: failed to scrobble %s: %v\n", track.Name, err)
 		}
 		currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
