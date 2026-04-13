@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/boldandbrad/spin/internal/api"
-	"github.com/boldandbrad/spin/internal/keyring"
 	"github.com/boldandbrad/spin/internal/profile"
 	"github.com/boldandbrad/spin/internal/scrobble"
 	"github.com/charmbracelet/huh"
@@ -109,17 +108,9 @@ func AlbumTUI(profileFlag string, dryrun bool) error {
 		return nil
 	}
 
-	username := profileFlag
-	if username == "" {
-		username, err = profile.GetActiveProfile()
-		if err != nil {
-			return err
-		}
-	}
-
-	cred, err := keyring.GetCredential(username)
+	cred, err := profile.GetCredentialForProfile(profileFlag)
 	if err != nil {
-		return fmt.Errorf("failed to get credential: %w", err)
+		return err
 	}
 
 	currentTimestamp = timestamp

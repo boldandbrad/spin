@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/boldandbrad/spin/internal/api"
-	"github.com/boldandbrad/spin/internal/keyring"
 	"github.com/boldandbrad/spin/internal/profile"
 	"github.com/boldandbrad/spin/internal/scrobble"
 	"github.com/boldandbrad/spin/tui"
@@ -52,12 +51,6 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 			return fmt.Errorf("no tracks found for %s - %s", artist, album)
 		}
 
-		if dryrun {
-			fmt.Printf("Would scrobble:\n")
-		} else {
-			fmt.Printf("Successfully scrobble:\n")
-		}
-
 		var timestamp time.Time
 		var totalDuration int
 		for _, track := range albumInfo.Album.Tracks.Track {
@@ -80,12 +73,15 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 			timestamp = time.Now()
 		}
 
-		if dateFlag != "" {
-			t, err := scrobble.ParseDate(dateFlag)
-			if err != nil {
-				return fmt.Errorf("invalid --date: %w", err)
-			}
-			timestamp = time.Date(t.Year(), t.Month(), t.Day(), timestamp.Hour(), timestamp.Minute(), 0, 0, timestamp.Location())
+		timestamp, err = scrobble.ApplyDateToTimestamp(dateFlag, timestamp)
+		if err != nil {
+			return fmt.Errorf("invalid --date: %w", err)
+		}
+
+		if dryrun {
+			fmt.Printf("Would scrobble:\n")
+		} else {
+			fmt.Printf("Successfully scrobbled:\n")
 		}
 
 		currentTimestamp := timestamp
@@ -99,17 +95,9 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 			return nil
 		}
 
-		username := profileFlag
-		if username == "" {
-			username, err = profile.GetActiveProfile()
-			if err != nil {
-				return err
-			}
-		}
-
-		cred, err := keyring.GetCredential(username)
+		cred, err := profile.GetCredentialForProfile(profileFlag)
 		if err != nil {
-			return fmt.Errorf("failed to get credential: %w", err)
+			return err
 		}
 
 		currentTimestamp = timestamp

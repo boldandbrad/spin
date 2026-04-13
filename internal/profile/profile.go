@@ -9,6 +9,10 @@ import (
 	"github.com/boldandbrad/spin/internal/keyring"
 )
 
+type Credential struct {
+	SessionKey string
+}
+
 type Profile struct {
 	Username   string `json:"username"`
 	HasSession bool   `json:"has_session"`
@@ -191,4 +195,25 @@ func ProfileExists(username string) bool {
 		}
 	}
 	return false
+}
+
+func ResolveProfile(profileFlag string) (string, error) {
+	if profileFlag != "" {
+		return profileFlag, nil
+	}
+	return GetActiveProfile()
+}
+
+func GetCredentialForProfile(profileFlag string) (*Credential, error) {
+	username, err := ResolveProfile(profileFlag)
+	if err != nil {
+		return nil, err
+	}
+
+	cred, err := keyring.GetCredential(username)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get credential: %w", err)
+	}
+
+	return &Credential{SessionKey: cred.SessionKey}, nil
 }

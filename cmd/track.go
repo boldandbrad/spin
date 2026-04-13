@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/boldandbrad/spin/internal/api"
-	"github.com/boldandbrad/spin/internal/keyring"
 	"github.com/boldandbrad/spin/internal/profile"
 	"github.com/boldandbrad/spin/internal/scrobble"
 	"github.com/boldandbrad/spin/tui"
@@ -66,21 +65,9 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			timestamp = t.Add(-time.Duration(duration) * time.Millisecond)
 		}
 
-		if dateFlag != "" {
-			t, err := scrobble.ParseDate(dateFlag)
-			if err != nil {
-				return fmt.Errorf("invalid --date: %w", err)
-			}
-			timestamp = time.Date(t.Year(), t.Month(), t.Day(), timestamp.Hour(), timestamp.Minute(), 0, 0, timestamp.Location())
-		}
-
-		username := profileFlag
-		if username == "" {
-			var err error
-			username, err = profile.GetActiveProfile()
-			if err != nil {
-				return err
-			}
+		timestamp, err := scrobble.ApplyDateToTimestamp(dateFlag, timestamp)
+		if err != nil {
+			return fmt.Errorf("invalid --date: %w", err)
 		}
 
 		ts := scrobble.FormatTimestamp(timestamp)
@@ -97,9 +84,9 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			return nil
 		}
 
-		cred, err := keyring.GetCredential(username)
+		cred, err := profile.GetCredentialForProfile(profileFlag)
 		if err != nil {
-			return fmt.Errorf("failed to get credential: %w", err)
+			return err
 		}
 
 		if err := client.ScrobbleTrack(artist, track, ts, cred.SessionKey); err != nil {
