@@ -72,7 +72,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
-          output="spin-${{ matrix.goos }}-${{ matrix.goarch }}"
+          output="spin"
           [ "${{ matrix.goos }}" = "windows" ] && output="$output.exe"
           go build -ldflags="-s -w -X github.com/boldandbrad/spin/cmd.version=${{ inputs.version }}" -o "$output" .
           ${{ matrix.package }} "${{ matrix.artifact }}" "$output"
