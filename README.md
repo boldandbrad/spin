@@ -48,6 +48,9 @@ Linux Secret Service). Profile metadata is stored at `~/.config/spin/`.
 By default, Spin uses the current time for scrobbles. However, both modes
 provide ways to set custom timestamps.
 
+> ⚠️ **Note**: Last.fm rejects scrobbles older than 2 weeks. Timestamps beyond
+> this limit may fail.
+
 ## Quick Start
 
 Add a profile for your last.fm account. You will be prompted for your last.fm
