@@ -8,17 +8,19 @@ import (
 	"github.com/boldandbrad/spin/internal/scrobble"
 )
 
-type ScrobbleInput struct {
+type Input struct {
 	Artist   string
-	Name     string
+	Track    string
+	Album    string
 	TimeMode scrobble.TimeMode
 	Date     string
 	Time     string
 }
 
-func CollectInput(isAlbum bool) (*ScrobbleInput, error) {
+func CollectInput(isAlbum bool) (*Input, error) {
 	artist := ""
-	name := ""
+	track := ""
+	album := ""
 	timeMode := scrobble.TimeModeEndNow
 
 	artistField := huh.NewInput().
@@ -32,35 +34,39 @@ func CollectInput(isAlbum bool) (*ScrobbleInput, error) {
 			return nil
 		})
 
-	nameField := huh.NewInput().
-		Title(func() string {
-			if isAlbum {
-				return "Album"
-			}
-			return "Track"
-		}()).
-		Value(&name).
-		Placeholder(func() string {
-			if isAlbum {
-				return "e.g., OK Computer"
-			}
-			return "e.g., Paranoid Android"
-		}()).
+	trackField := huh.NewInput().
+		Title("Track").
+		Value(&track).
+		Placeholder("e.g., Paranoid Android").
 		Validate(func(s string) error {
-			if s == "" {
-				if isAlbum {
-					return fmt.Errorf("album is required")
-				}
+			if s == "" && !isAlbum {
 				return fmt.Errorf("track is required")
 			}
 			return nil
 		})
 
+	albumField := huh.NewInput().
+		Title("Album").
+		Value(&album).
+		Placeholder("e.g., OK Computer").
+		Validate(func(s string) error {
+			if s == "" && isAlbum {
+				return fmt.Errorf("album is required")
+			}
+			return nil
+		})
+
+	formFields := []huh.Field{artistField}
+	if isAlbum {
+		formFields = append(formFields, albumField)
+	} else {
+		formFields = append(formFields, trackField)
+		albumField.Title("Album (optional)")
+		formFields = append(formFields, albumField)
+	}
+
 	form := huh.NewForm(
-		huh.NewGroup(
-			artistField,
-			nameField,
-		),
+		huh.NewGroup(formFields...),
 		huh.NewGroup(
 			huh.NewSelect[scrobble.TimeMode]().
 				Title("When did you listen?").
@@ -96,19 +102,20 @@ func CollectInput(isAlbum bool) (*ScrobbleInput, error) {
 		}
 	}
 
-	return &ScrobbleInput{
+	return &Input{
 		Artist:   artist,
-		Name:     name,
+		Track:    track,
+		Album:    album,
 		TimeMode: timeMode,
 		Date:     date,
 		Time:     timeStr,
 	}, nil
 }
 
-func CollectTrackInput() (*ScrobbleInput, error) {
+func CollectTrackInput() (*Input, error) {
 	return CollectInput(false)
 }
 
-func CollectAlbumInput() (*ScrobbleInput, error) {
+func CollectAlbumInput() (*Input, error) {
 	return CollectInput(true)
 }

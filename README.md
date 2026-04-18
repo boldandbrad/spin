@@ -117,8 +117,8 @@ spin track      # interactively search for and scrobble a track
 spin album      # interactively search for and scrobble an album
 ```
 
-In addition to prompting for the `artist` and `track`/`album`, TUI mode also
-allows you to specify the scrobble date and time:
+In addition to prompting for the `artist`, `track`/`album`, and (for tracks) optionally the
+`album`, TUI mode also allows you to specify the scrobble date and time:
 - **Starting now**: Scrobble at the current time
 - **Ending now**: Calculate start time from track/album duration
 - **Custom start time**: Provide a specific date and time
@@ -129,30 +129,32 @@ Available TUI mode options:
 
 #### CLI mode
 
-CLI mode scrobbles directly using provided arguments. Both commands require two
-positional arguments: `artist`, and then `track` or `album` respectively.
+CLI mode scrobbles directly using provided arguments. The track command accepts
+an optional third argument for album.
 
 ```sh
-spin track <artist> <track>                                 # scrobble track
-spin album <artist> <album>                                 # scrobble album
+spin track <artist> <track>                    # scrobble track
+spin album <artist> <album>                    # scrobble album
 ```
 
 Available CLI mode options:
 - `--end-now`: calculate start time from track/album duration
 - `--date`: date of listen (YYYY-MM-DD)
 - `--timestamp`: time of listen (HH:MM)
+- `--album`: album to scrobble with (optional, for track command)
 - `-p|--profile`: profile to scrobble with (default: active profile)
 - `--dryrun`: show what would be scrobbled without submitting
 
 CLI mode examples:
 
 ```sh
-spin track "Best Frenz" "Replay"                            # scrobble track now
-spin track "Joywave" "Nice House" --end-now                 # calculate start from duration
-spin track "Joywave" "Nice House" --date 2026-04-10         # scrobble with specific date
-spin track "Joywave" "Nice House" --timestamp 12:46         # scrobble at specific time
-spin track "Joywave" "Nice House" --dryrun                  # preview without scrobbling
-spin album "Coldplay" "X&Y" --end-now                       # album ending now
+spin track "Best Frenz" "Replay"                                # scrobble track now
+spin track "Metric" "Gold Guns Girls" --end-now                 # calculate start from duration
+spin track "The Strokes" "Eternal Summer" --date 2026-04-10     # scrobble with specific date
+spin track "Phoenix" "After Midnight" --timestamp 12:46         # scrobble at specific time
+spin track "Joywave" "Blank Slate" --album "Possession"         # scrobble track with album
+spin track "MGMT" "Little Dark Age" --dryrun                    # preview without scrobbling
+spin album "Coldplay" "X&Y" --end-now                           # album ending now
 spin album "Electric Guest" "Mondo" --date 2026-01-31 --timestamp 01:14  # specific date and time
 ```
 

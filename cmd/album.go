@@ -16,7 +16,13 @@ type trackResult struct {
 	Duration int
 }
 
-func getAlbumTracks(artist, album string) ([]trackResult, error) {
+type albumMetadata struct {
+	Artist string
+	Album  string
+	Tracks []trackResult
+}
+
+func getAlbumTracks(artist, album string) (*albumMetadata, error) {
 	albumInfo, err := api.NewClient().GetAlbumInfo(artist, album)
 	if err != nil {
 		return nil, err
@@ -25,12 +31,16 @@ func getAlbumTracks(artist, album string) ([]trackResult, error) {
 	for i, t := range albumInfo.Album.Tracks.Track {
 		tracks[i] = trackResult{Name: t.Name, Duration: t.Duration}
 	}
-	return tracks, nil
+	return &albumMetadata{
+		Artist: albumInfo.Album.Artist,
+		Album:  albumInfo.Album.Name,
+		Tracks: tracks,
+	}, nil
 }
 
 type scrobbleInput struct {
 	Artist    string
-	Name      string
+	Album     string
 	Tracks    []trackResult
 	Timestamp time.Time
 	Profile   string
@@ -65,7 +75,7 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 				return nil
 			}
 			artist = input.Artist
-			name = input.Name
+			name = input.Album
 			timeMode = input.TimeMode
 			customDate = input.Date
 			customTime = input.Time
@@ -85,16 +95,16 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 			}
 		}
 
-		tracks, err := getAlbumTracks(artist, name)
+		albumMeta, err := getAlbumTracks(artist, name)
 		if err != nil {
 			return fmt.Errorf("failed to get album info: %w", err)
 		}
-		if len(tracks) == 0 {
+		if len(albumMeta.Tracks) == 0 {
 			return fmt.Errorf("no tracks found for %s - %s", artist, name)
 		}
 
 		var totalDuration int
-		for _, t := range tracks {
+		for _, t := range albumMeta.Tracks {
 			totalDuration += t.Duration
 		}
 
@@ -104,9 +114,9 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 		}
 
 		input := &scrobbleInput{
-			Artist:    artist,
-			Name:      name,
-			Tracks:    tracks,
+			Artist:    albumMeta.Artist,
+			Album:     albumMeta.Album,
+			Tracks:    albumMeta.Tracks,
 			Timestamp: timestamp,
 			Profile:   profileFlag,
 			Dryrun:    dryrun,
@@ -136,7 +146,7 @@ func scrobbleAlbum(input *scrobbleInput) error {
 		for i, track := range input.Tracks {
 			tsFormatted := currentTs.Format("2006-01-02 15:04")
 			nameWidth := len(input.Artist) + 3 + len(track.Name)
-			fmt.Printf("%2d. %s - %s%*s (%s)\n", i+1, input.Artist, track.Name, maxWidth-nameWidth, "", tsFormatted)
+			fmt.Printf("%2d. %s - %s%*s (%s) (%s)\n", i+1, input.Artist, track.Name, maxWidth-nameWidth, "", input.Album, tsFormatted)
 			currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
 		}
 		return nil
@@ -151,15 +161,15 @@ func scrobbleAlbum(input *scrobbleInput) error {
 	currentTs := input.Timestamp
 	for i, track := range input.Tracks {
 		ts := scrobble.FormatTimestamp(currentTs)
-		if err := client.ScrobbleTrack(input.Artist, track.Name, ts, p.SessionKey); err != nil {
+		if err := client.ScrobbleTrack(input.Artist, track.Name, ts, p.SessionKey, input.Album); err != nil {
 			nameWidth := len(input.Artist) + 3 + len(track.Name)
-			fmt.Printf("%2d. %s - %s%*s: failed to scrobble: %v\n", i+1, input.Artist, track.Name, maxWidth-nameWidth, "", err)
+			fmt.Printf("%2d. %s - %s (%s)%*s: failed to scrobble: %v\n", i+1, input.Artist, track.Name, input.Album, maxWidth-nameWidth, "", err)
 			currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
 			continue
 		}
 		tsFormatted := currentTs.Format("2006-01-02 15:04")
 		nameWidth := len(input.Artist) + 3 + len(track.Name)
-		fmt.Printf("%2d. %s - %s%*s (%s)\n", i+1, input.Artist, track.Name, maxWidth-nameWidth, "", tsFormatted)
+		fmt.Printf("%2d. %s - %s%*s (%s) (%s)\n", i+1, input.Artist, track.Name, maxWidth-nameWidth, "", input.Album, tsFormatted)
 		currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
 	}
 

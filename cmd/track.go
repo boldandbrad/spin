@@ -24,9 +24,10 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 		endNow, _ := cmd.Flags().GetBool("end-now")
 		dateFlag, _ := cmd.Flags().GetString("date")
 		timestampFlag, _ := cmd.Flags().GetString("timestamp")
+		albumFlag, _ := cmd.Flags().GetString("album")
 		dryrun, _ := cmd.Flags().GetBool("dryrun")
 
-		var artist, track string
+		var artist, track, album string
 		var timeMode scrobble.TimeMode
 		var customDate, customTime string
 
@@ -39,7 +40,8 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 				return nil
 			}
 			artist = input.Artist
-			track = input.Name
+			track = input.Track
+			album = input.Album
 			timeMode = input.TimeMode
 			customDate = input.Date
 			customTime = input.Time
@@ -49,6 +51,7 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			}
 			artist = args[0]
 			track = args[1]
+			album = albumFlag
 
 			if endNow {
 				timeMode = scrobble.TimeModeEndNow
@@ -61,17 +64,18 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			}
 		}
 
+		client := api.NewClient()
+		trackMetadata, err := client.GetTrackInfo(artist, track)
+		if err != nil {
+			return fmt.Errorf("failed to get track info: %w", err)
+		}
+
 		totalDuration := 0
 		if timeMode == scrobble.TimeModeEndNow {
-			client := api.NewClient()
-			durationMs, err := client.GetTrackInfo(artist, track)
-			if err != nil {
-				return fmt.Errorf("failed to get track info: %w", err)
-			}
-			if durationMs == 0 {
+			if trackMetadata.Duration == 0 {
 				return fmt.Errorf("track duration unknown, cannot use --end-now")
 			}
-			totalDuration = durationMs / 1000
+			totalDuration = trackMetadata.Duration / 1000
 		}
 
 		timestamp, err := scrobble.ResolveTimestampFromMode(timeMode, customTime, customDate, totalDuration)
@@ -79,11 +83,35 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			return err
 		}
 
-		return scrobbleTrack(artist, track, timestamp, profileFlag, dryrun)
+		albumName := ""
+		if trackMetadata != nil {
+			artist = trackMetadata.Artist
+			track = trackMetadata.Track
+
+			if album != "" {
+				if validatedAlbum, _ := client.ValidateAlbumForTrack(artist, track, album); validatedAlbum != "" {
+					albumName = validatedAlbum
+				} else {
+					albumName = trackMetadata.Album
+				}
+			} else {
+				albumName = trackMetadata.Album
+			}
+		}
+
+		return scrobbleTrack(artist, track, albumName, timestamp, profileFlag, dryrun)
 	},
 }
 
-func scrobbleTrack(artist, track string, timestamp time.Time, profileFlag string, dryrun bool) error {
+func printTrack(artist, track, album, timestamp string) {
+	if album != "" {
+		fmt.Printf("%2d. %s - %s (%s) (%s)\n", 1, artist, track, album, timestamp)
+	} else {
+		fmt.Printf("%2d. %s - %s (%s)\n", 1, artist, track, timestamp)
+	}
+}
+
+func scrobbleTrack(artist, track, album string, timestamp time.Time, profileFlag string, dryrun bool) error {
 	ts := scrobble.FormatTimestamp(timestamp)
 	tsFormatted := timestamp.Format("2006-01-02 15:04")
 
@@ -94,7 +122,7 @@ func scrobbleTrack(artist, track string, timestamp time.Time, profileFlag string
 
 	if dryrun {
 		fmt.Printf("Would scrobble to %s:\n\n", username)
-		fmt.Printf("%2d. %s - %s (%s)\n", 1, artist, track, tsFormatted)
+		printTrack(artist, track, album, tsFormatted)
 		return nil
 	}
 
@@ -104,12 +132,12 @@ func scrobbleTrack(artist, track string, timestamp time.Time, profileFlag string
 	}
 
 	client := api.NewClient()
-	if err := client.ScrobbleTrack(artist, track, ts, p.SessionKey); err != nil {
-		return fmt.Errorf("%2d. %s - %s: failed to scrobble: %w", 1, artist, track, err)
+	if err := client.ScrobbleTrack(artist, track, ts, p.SessionKey, album); err != nil {
+		return fmt.Errorf("%2d. %s - %s (%s): failed to scrobble: %w", 1, artist, track, album, err)
 	}
 
 	fmt.Printf("Scrobbled to %s:\n\n", username)
-	fmt.Printf("%2d. %s - %s (%s)\n", 1, artist, track, tsFormatted)
+	printTrack(artist, track, album, tsFormatted)
 
 	return nil
 }
@@ -119,5 +147,6 @@ func init() {
 	trackCmd.Flags().String("date", "", "date of listen (YYYY-MM-DD)")
 	trackCmd.Flags().String("timestamp", "", "time of listen (HH:MM)")
 	trackCmd.Flags().StringP("profile", "p", "", "profile to scrobble with")
+	trackCmd.Flags().String("album", "", "album to scrobble with (optional)")
 	trackCmd.Flags().Bool("dryrun", false, "show what would be scrobbled without submitting")
 }
