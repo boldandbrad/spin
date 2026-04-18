@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/boldandbrad/spin/internal/api"
@@ -12,13 +13,14 @@ import (
 )
 
 var trackCmd = &cobra.Command{
-	Use:   "track [artist] [track]",
-	Short: "Scrobble a track",
+	Use:           "track [artist] [track]",
+	Short:         "Scrobble a track",
+	SilenceUsage:  true,
+	SilenceErrors: true,
 	Long: `Scrobble a track to last.fm.
 
 If no arguments are provided, launches TUI mode for interactive scrobbling.
 If artist and track are provided, scrobbles directly (CLI mode).`,
-	Args: cobra.RangeArgs(0, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		profileFlag, _ := cmd.Flags().GetString("profile")
 		endNow, _ := cmd.Flags().GetBool("end-now")
@@ -47,7 +49,9 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			customTime = input.Time
 		} else {
 			if len(args) != 2 {
-				return fmt.Errorf("requires artist and track arguments")
+				fmt.Fprintf(os.Stderr, "Error: requires artist and track arguments\n\n")
+				cmd.Usage()
+				return nil
 			}
 			artist = args[0]
 			track = args[1]
@@ -67,13 +71,13 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 		client := api.NewClient()
 		trackMetadata, err := client.GetTrackInfo(artist, track)
 		if err != nil {
-			return fmt.Errorf("failed to get track info: %w", err)
+			return err
 		}
 
 		totalDuration := 0
 		if timeMode == scrobble.TimeModeEndNow {
 			if trackMetadata.Duration == 0 {
-				return fmt.Errorf("track duration unknown, cannot use --end-now")
+				return fmt.Errorf("last.fm doesn't have duration for this track, cannot use --end-now")
 			}
 			totalDuration = trackMetadata.Duration / 1000
 		}

@@ -259,9 +259,18 @@ func (c *Client) GetAlbumInfo(artist, album string) (*AlbumDetailResponse, error
 		return nil, err
 	}
 
+	var errResp ErrorResponse
+	if err := json.Unmarshal([]byte(data), &errResp); err == nil && errResp.Error != 0 {
+		return nil, fmt.Errorf("last.fm: album '%s' by '%s' not found", album, artist)
+	}
+
 	var result AlbumDetailResponse
 	if err := json.Unmarshal([]byte(data), &result); err != nil {
 		return nil, err
+	}
+
+	if result.Album.Name == "" {
+		return nil, fmt.Errorf("last.fm: album '%s' by '%s' not found", album, artist)
 	}
 
 	return &result, nil
@@ -368,6 +377,11 @@ func (c *Client) GetTrackInfo(artist, track string) (*TrackMetadata, error) {
 		return nil, err
 	}
 
+	var errResp ErrorResponse
+	if err := json.Unmarshal([]byte(data), &errResp); err == nil && errResp.Error != 0 {
+		return nil, fmt.Errorf("last.fm: track '%s' by '%s' not found", track, artist)
+	}
+
 	var result struct {
 		Track struct {
 			Duration string `json:"duration"`
@@ -387,6 +401,10 @@ func (c *Client) GetTrackInfo(artist, track string) (*TrackMetadata, error) {
 	duration := 0
 	if result.Track.Duration != "" {
 		fmt.Sscanf(result.Track.Duration, "%d", &duration)
+	}
+
+	if result.Track.Name == "" {
+		return nil, fmt.Errorf("last.fm: track '%s' by '%s' not found", track, artist)
 	}
 
 	return &TrackMetadata{

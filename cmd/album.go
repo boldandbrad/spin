@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/boldandbrad/spin/internal/api"
@@ -48,13 +49,14 @@ type scrobbleInput struct {
 }
 
 var albumCmd = &cobra.Command{
-	Use:   "album [artist] [album]",
-	Short: "Scrobble an album",
+	Use:           "album [artist] [album]",
+	Short:         "Scrobble an album",
+	SilenceUsage:  true,
+	SilenceErrors: true,
 	Long: `Scrobble an album to last.fm.
 
 If no arguments are provided, launches TUI mode for interactive scrobbling.
 If artist and album are provided, scrobbles directly (CLI mode).`,
-	Args: cobra.RangeArgs(0, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		profileFlag, _ := cmd.Flags().GetString("profile")
 		endNow, _ := cmd.Flags().GetBool("end-now")
@@ -81,7 +83,9 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 			customTime = input.Time
 		} else {
 			if len(args) != 2 {
-				return fmt.Errorf("requires artist and album arguments")
+				fmt.Fprintf(os.Stderr, "Error: requires artist and album arguments\n\n")
+				cmd.Usage()
+				return nil
 			}
 			artist = args[0]
 			name = args[1]
@@ -97,7 +101,7 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 
 		albumMeta, err := getAlbumTracks(artist, name)
 		if err != nil {
-			return fmt.Errorf("failed to get album info: %w", err)
+			return err
 		}
 		if len(albumMeta.Tracks) == 0 {
 			return fmt.Errorf("no tracks found for %s - %s", artist, name)

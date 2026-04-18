@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Output now displays album name in parentheses for both track and album scrobbles
 - Artist, track, and album names are now corrected using Last.fm metadata for proper casing
 - Track command always fetches metadata to get corrected names from Last.fm
+- Improved error messages - shows user input when track/album not found
+- Better error messages for date/time parsing with format examples
+- TUI refactored with cleaner Input struct
+
+### Fixed
+- Duplicate error output fixed
+- Consistent usage display for arg validation errors
 
 ## [0.1.1] - 2024-05-15
 
