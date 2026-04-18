@@ -5,6 +5,11 @@
 Interactively or programmatically scrobble tracks and albums to last.fm from the
 terminal. That's it.
 
+> **Note**: The `main` branch represents active development. For specific
+> releases, see the README associated with that tag on
+> [GitHub](https://github.com/boldandbrad/spin/tags). See
+> [CHANGELOG](./CHANGELOG.md) for release notes.
+
 ## Install
 
 ```sh
