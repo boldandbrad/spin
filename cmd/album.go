@@ -46,6 +46,7 @@ type scrobbleInput struct {
 	Timestamp time.Time
 	Profile   string
 	Dryrun    bool
+	TUIMode   bool
 }
 
 var albumCmd = &cobra.Command{
@@ -67,8 +68,10 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 		var artist, name string
 		var timeMode scrobble.TimeMode
 		var customDate, customTime string
+		tuiMode := false
 
 		if len(args) == 0 {
+			tuiMode = true
 			input, err := tui.CollectAlbumInput()
 			if err != nil {
 				return err
@@ -124,6 +127,7 @@ If artist and album are provided, scrobbles directly (CLI mode).`,
 			Timestamp: timestamp,
 			Profile:   profileFlag,
 			Dryrun:    dryrun,
+			TUIMode:   tuiMode,
 		}
 
 		return scrobbleAlbum(input)
@@ -157,7 +161,7 @@ func scrobbleAlbum(input *scrobbleInput) error {
 
 		fmt.Printf("\nRun this command to scrobble:\n  %s\n\n", cliCmd)
 
-		if askCopyToClipboard() {
+		if input.TUIMode && askCopyToClipboard() {
 			if err := copyToClipboard(cliCmd); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to copy: %v\n", err)
 			} else {

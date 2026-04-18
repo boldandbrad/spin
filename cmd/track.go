@@ -31,8 +31,10 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 		var artist, track, album string
 		var timeMode scrobble.TimeMode
 		var customDate, customTime string
+		tuiMode := false
 
 		if len(args) == 0 {
+			tuiMode = true
 			input, err := tui.CollectTrackInput()
 			if err != nil {
 				return err
@@ -103,7 +105,7 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			}
 		}
 
-		return scrobbleTrack(artist, track, albumName, timestamp, profileFlag, dryrun)
+		return scrobbleTrack(artist, track, albumName, timestamp, profileFlag, dryrun, tuiMode)
 	},
 }
 
@@ -115,7 +117,7 @@ func printTrack(artist, track, album, timestamp string) {
 	}
 }
 
-func scrobbleTrack(artist, track, album string, timestamp time.Time, profileFlag string, dryrun bool) error {
+func scrobbleTrack(artist, track, album string, timestamp time.Time, profileFlag string, dryrun bool, tuiMode bool) error {
 	ts := scrobble.FormatTimestamp(timestamp)
 	tsFormatted := timestamp.Format("2006-01-02 15:04")
 
@@ -131,7 +133,7 @@ func scrobbleTrack(artist, track, album string, timestamp time.Time, profileFlag
 
 		fmt.Printf("\nRun this command to scrobble:\n  %s\n\n", cliCmd)
 
-		if askCopyToClipboard() {
+		if tuiMode && askCopyToClipboard() {
 			if err := copyToClipboard(cliCmd); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to copy: %v\n", err)
 			} else {
