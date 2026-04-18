@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Duplicate error output fixed
 - Consistent usage display for arg validation errors
 
+### Documentation
+- Added CONTRIBUTING.md with contribution guidelines and release process
+- Added note about main branch representing active development
+
 ## [0.1.1] - 2024-05-15
 
 ### Added
