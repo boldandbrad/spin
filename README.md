@@ -181,6 +181,13 @@ spin history -n 50          # set the number of results
 - 🔧 No config: just works out of the box
 - 🔒 Secure: session keys stored in system keychain
 
+## Inspiration
+
+Spin was inspired by these projects:
+
+- [scrobbler](https://github.com/hauzer/scrobbler) - A simple CLI Last.fm scrobbler
+- [OpenWebScrobbler](https://github.com/elamperti/OpenWebScrobbler) - A web-based scrobbler
+
 ## License
 
 [MIT](./LICENSE)
