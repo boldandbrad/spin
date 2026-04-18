@@ -24,12 +24,12 @@ func ResolveTimestampFromMode(mode TimeMode, customTime, customDate string, tota
 	case TimeModeCustom:
 		timestamp, err := parseTimeOfDay(customTime)
 		if err != nil {
-			return time.Time{}, fmt.Errorf("invalid --timestamp: %w", err)
+			return time.Time{}, fmt.Errorf("invalid time format '%s', use HH:MM (e.g., 14:30)", customTime)
 		}
 		if customDate != "" {
 			parsedDate, err := time.Parse("2006-01-02", customDate)
 			if err != nil {
-				return time.Time{}, fmt.Errorf("invalid --date: %w", err)
+				return time.Time{}, fmt.Errorf("invalid date format '%s', use YYYY-MM-DD (e.g., 2026-04-18)", customDate)
 			}
 			timestamp = time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), timestamp.Hour(), timestamp.Minute(), timestamp.Second(), timestamp.Nanosecond(), timestamp.Location())
 		}
