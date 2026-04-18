@@ -267,15 +267,35 @@ func (c *Client) GetAlbumInfo(artist, album string) (*AlbumDetailResponse, error
 	return &result, nil
 }
 
-func (c *Client) ScrobbleTrack(artist, track, timestamp, sessionKey string) error {
-	signature := c.createSignature(map[string]string{
+func (c *Client) ValidateAlbumForTrack(artist, track, album string) (string, error) {
+	albumInfo, err := c.GetAlbumInfo(artist, album)
+	if err != nil {
+		return "", err
+	}
+
+	for _, t := range albumInfo.Album.Tracks.Track {
+		if t.Name == track {
+			return albumInfo.Album.Name, nil
+		}
+	}
+
+	return "", nil
+}
+
+func (c *Client) ScrobbleTrack(artist, track, timestamp, sessionKey string, album string) error {
+	signatureParams := map[string]string{
 		"api_key":   c.GetAPIKey(),
 		"artist":    artist,
 		"method":    "track.scrobble",
 		"sk":        sessionKey,
 		"timestamp": timestamp,
 		"track":     track,
-	})
+	}
+	if album != "" {
+		signatureParams["album"] = album
+	}
+
+	signature := c.createSignature(signatureParams)
 
 	params := url.Values{
 		"api_key":   {c.GetAPIKey()},
@@ -286,6 +306,9 @@ func (c *Client) ScrobbleTrack(artist, track, timestamp, sessionKey string) erro
 		"track":     {track},
 		"api_sig":   {signature},
 		"format":    {"json"},
+	}
+	if album != "" {
+		params.Add("album", album)
 	}
 
 	data, _, err := c.doRequest(params)
@@ -323,7 +346,14 @@ func (c *Client) GetRecentTracks(username string, limit int) ([]TrackInfo, error
 	return result.RecentTracks.Track, nil
 }
 
-func (c *Client) GetTrackInfo(artist, track string) (int, error) {
+type TrackMetadata struct {
+	Duration int
+	Artist   string
+	Track    string
+	Album    string
+}
+
+func (c *Client) GetTrackInfo(artist, track string) (*TrackMetadata, error) {
 	params := url.Values{
 		"method":      {"track.getInfo"},
 		"api_key":     {c.GetAPIKey()},
@@ -335,16 +365,23 @@ func (c *Client) GetTrackInfo(artist, track string) (int, error) {
 
 	data, _, err := c.doRequest(params)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	var result struct {
 		Track struct {
 			Duration string `json:"duration"`
+			Name     string `json:"name"`
+			Artist   struct {
+				Name string `json:"name"`
+			} `json:"artist"`
+			Album struct {
+				Title string `json:"title"`
+			} `json:"album"`
 		} `json:"track"`
 	}
 	if err := json.Unmarshal([]byte(data), &result); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	duration := 0
@@ -352,7 +389,12 @@ func (c *Client) GetTrackInfo(artist, track string) (int, error) {
 		fmt.Sscanf(result.Track.Duration, "%d", &duration)
 	}
 
-	return duration, nil
+	return &TrackMetadata{
+		Duration: duration,
+		Artist:   result.Track.Artist.Name,
+		Track:    result.Track.Name,
+		Album:    result.Track.Album.Title,
+	}, nil
 }
 
 func (c *Client) createSignature(params map[string]string) string {
