@@ -145,6 +145,7 @@ func scrobbleAlbum(input *scrobbleInput) error {
 	}
 
 	if input.Dryrun {
+		cliCmd := buildAlbumCLICommand(input.Artist, input.Album, input.Timestamp)
 		fmt.Printf("Would scrobble to %s:\n\n", username)
 		currentTs := input.Timestamp
 		for i, track := range input.Tracks {
@@ -153,6 +154,17 @@ func scrobbleAlbum(input *scrobbleInput) error {
 			fmt.Printf("%2d. %s - %s%*s (%s) (%s)\n", i+1, input.Artist, track.Name, maxWidth-nameWidth, "", input.Album, tsFormatted)
 			currentTs = currentTs.Add(time.Duration(track.Duration) * time.Second)
 		}
+
+		fmt.Printf("\nRun this command to scrobble:\n  %s\n\n", cliCmd)
+
+		if askCopyToClipboard() {
+			if err := copyToClipboard(cliCmd); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to copy: %v\n", err)
+			} else {
+				fmt.Println("Command copied to clipboard!")
+			}
+		}
+
 		return nil
 	}
 
