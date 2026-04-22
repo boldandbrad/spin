@@ -42,13 +42,13 @@ Linux Secret Service). Profile metadata is stored at `~/.config/spin/`.
 
 ### Scrobble Modes
 
-- 👤 **TUI mode**: An interactive mode that prompts for artist and release details,
-  searches last.fm for the best match, and scrobbles automatically. TUI mode closes
-  automatically when a scrobble is submitted, or can be closed with `Ctrl+C`.
+- 👤 **TUI mode**: An interactive mode that prompts for artist and release
+  details to scrobble. TUI mode closes automatically when a scrobble is
+  submitted, or can be quit with `Ctrl+C`.
 
 - 🤖 **CLI mode**: An automation friendly mode that scrobbles tracks and albums
-  directly using details provided as command arguments. Scrobbles are submitted as
-  soon as the command is run.
+  directly using details provided as command arguments. Scrobbles are submitted
+  as soon as the command is run.
 
 By default, Spin uses the current time for scrobbles. However, both modes
 provide ways to set custom timestamps.
@@ -122,15 +122,17 @@ spin track      # interactively search for and scrobble a track
 spin album      # interactively search for and scrobble an album
 ```
 
-In addition to prompting for the `artist`, `track`/`album`, and (for tracks) optionally the
-`album`, TUI mode also allows you to specify the scrobble date and time:
+In addition to prompting for the `artist`, `track`/`album`, and (for tracks)
+optionally the `album`, TUI mode also allows you to specify the scrobble date
+and time:
 - **Starting now**: Scrobble at the current time
 - **Ending now**: Calculate start time from track/album duration
 - **Custom start time**: Provide a specific date and time
 
 Available TUI mode options:
 - `-p|--profile`: profile to scrobble with (default: active profile)
-- `--dryrun`: show what would be scrobbled without submitting
+- `--dryrun`: show what would be scrobbled without submitting (prompts to copy
+  CLI command to easily reproduce)
 
 #### CLI mode
 
@@ -185,8 +187,10 @@ spin history -n 50          # set the number of results
 
 Spin was inspired by these projects:
 
-- [scrobbler](https://github.com/hauzer/scrobbler) - A simple CLI Last.fm scrobbler
-- [OpenWebScrobbler](https://github.com/elamperti/OpenWebScrobbler) - A web-based scrobbler
+- [scrobbler](https://github.com/hauzer/scrobbler) - A simple CLI Last.fm
+  scrobbler
+- [OpenWebScrobbler](https://github.com/elamperti/OpenWebScrobbler) - A
+  web-based scrobbler
 
 ## License
 

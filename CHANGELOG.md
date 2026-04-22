@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--album` flag to track command in CLI mode
 - Optional album field in TUI mode for track scrobbling
 - Album validation - when user provides `--album`, validates it's a valid release for the track via Last.fm
+- Dryrun now shows CLI command to reproduce scrobble
+- Option to copy CLI command to clipboard in dryrun mode (TUI mode only)
 
 ### Changed
 - Output now displays album name in parentheses for both track and album scrobbles
@@ -24,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Duplicate error output fixed
 - Consistent usage display for arg validation errors
+
+### Documentation
+- Added CONTRIBUTING.md with contribution guidelines and release process
+- Added note about main branch representing active development
 
 ## [0.1.1] - 2024-05-15
 

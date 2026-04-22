@@ -26,14 +26,15 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 		endNow, _ := cmd.Flags().GetBool("end-now")
 		dateFlag, _ := cmd.Flags().GetString("date")
 		timestampFlag, _ := cmd.Flags().GetString("timestamp")
-		albumFlag, _ := cmd.Flags().GetString("album")
 		dryrun, _ := cmd.Flags().GetBool("dryrun")
 
 		var artist, track, album string
 		var timeMode scrobble.TimeMode
 		var customDate, customTime string
+		tuiMode := false
 
 		if len(args) == 0 {
+			tuiMode = true
 			input, err := tui.CollectTrackInput()
 			if err != nil {
 				return err
@@ -55,6 +56,7 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			}
 			artist = args[0]
 			track = args[1]
+			albumFlag, _ := cmd.Flags().GetString("album")
 			album = albumFlag
 
 			if endNow {
@@ -103,7 +105,7 @@ If artist and track are provided, scrobbles directly (CLI mode).`,
 			}
 		}
 
-		return scrobbleTrack(artist, track, albumName, timestamp, profileFlag, dryrun)
+		return scrobbleTrack(artist, track, albumName, timestamp, profileFlag, dryrun, tuiMode)
 	},
 }
 
@@ -115,7 +117,7 @@ func printTrack(artist, track, album, timestamp string) {
 	}
 }
 
-func scrobbleTrack(artist, track, album string, timestamp time.Time, profileFlag string, dryrun bool) error {
+func scrobbleTrack(artist, track, album string, timestamp time.Time, profileFlag string, dryrun bool, tuiMode bool) error {
 	ts := scrobble.FormatTimestamp(timestamp)
 	tsFormatted := timestamp.Format("2006-01-02 15:04")
 
@@ -125,8 +127,20 @@ func scrobbleTrack(artist, track, album string, timestamp time.Time, profileFlag
 	}
 
 	if dryrun {
+		cliCmd := buildTrackCLICommand(artist, track, album, timestamp)
 		fmt.Printf("Would scrobble to %s:\n\n", username)
 		printTrack(artist, track, album, tsFormatted)
+
+		fmt.Printf("\nRun this command to scrobble:\n  %s\n\n", cliCmd)
+
+		if tuiMode && askCopyToClipboard() {
+			if err := copyToClipboard(cliCmd); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to copy: %v\n", err)
+			} else {
+				fmt.Println("Command copied to clipboard!")
+			}
+		}
+
 		return nil
 	}
 
